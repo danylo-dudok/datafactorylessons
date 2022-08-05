@@ -1,0 +1,9 @@
+{
+	"name": "covid19dataengineering",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "ef5a3b84-164e-45ee-a687-3d7796f8e009",
+		"tenantId": "6c51c659-9d52-41af-81f7-dde16380e813"
+	}
+}
