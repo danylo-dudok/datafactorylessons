@@ -19,7 +19,7 @@
 						"type": "DelimitedTextSource",
 						"storeSettings": {
 							"type": "AzureBlobFSReadSettings",
-							"fileListPath": "processed/ecdc/cases_deaths",
+							"recursive": true,
 							"enablePartitionDiscovery": false
 						},
 						"formatSettings": {
