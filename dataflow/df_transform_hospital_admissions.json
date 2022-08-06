@@ -1,5 +1,5 @@
 {
-	"name": "df_transform_daily_hospital_admissions",
+	"name": "df_transform_hospital_admissions",
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
@@ -17,6 +17,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "CountryCodes"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_dim_date_lookup",
+						"type": "DatasetReference"
+					},
+					"name": "DimDates"
 				}
 			],
 			"sinks": [
@@ -26,6 +33,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "Sink"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_weekly_hospital_admissions",
+						"type": "DatasetReference"
+					},
+					"name": "SinkWeekly"
 				}
 			],
 			"transformations": [
@@ -43,6 +57,30 @@
 				},
 				{
 					"name": "SortByCountryAndDate"
+				},
+				{
+					"name": "SplitDailyAndWeekly"
+				},
+				{
+					"name": "DeriveECDCYearWeek"
+				},
+				{
+					"name": "AggDimDate"
+				},
+				{
+					"name": "JoinDimDates"
+				},
+				{
+					"name": "SelectWeeklyRequiredFields"
+				},
+				{
+					"name": "SortWeeklyByCountryAndWeek"
+				},
+				{
+					"name": "WeeklyOccupancyCounts"
+				},
+				{
+					"name": "SelectWeeklySinkFields"
 				}
 			],
 			"scriptLines": [
@@ -68,10 +106,28 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> CountryCodes",
+				"source(output(",
+				"          date_key as string,",
+				"          date as string,",
+				"          year as string,",
+				"          month as string,",
+				"          day as string,",
+				"          day_name as string,",
+				"          day_of_year as string,",
+				"          week_of_month as string,",
+				"          week_of_year as string,",
+				"          month_name as string,",
+				"          year_month as string,",
+				"          year_week as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> DimDates",
 				"HospitalAdmissionsSource select(mapColumn(",
 				"          country,",
 				"          indicator,",
 				"          reported_date = date,",
+				"          reported_year_week = year_week,",
 				"          value,",
 				"          source",
 				"     ),",
@@ -81,14 +137,14 @@
 				"     multiple: false,",
 				"     pickup: 'any',",
 				"     broadcast: 'auto')~> CountryCodesLoookup",
-				"CountryCodesLoookup pivot(groupBy(SelectRequiredFields@country,",
+				"SplitDailyAndWeekly@Daily pivot(groupBy(SplitDailyAndWeekly@Daily@country,",
 				"          country_code_2_digit,",
 				"          country_code_3_digit,",
 				"          population,",
 				"          reported_date,",
 				"          source),",
 				"     pivotBy(indicator, ['Daily hospital occupancy', 'Daily ICU occupancy']),",
-				"     value = sum(value),",
+				"     {} = sum(value),",
 				"     columnNaming: '$N$V',",
 				"     lateral: true) ~> OccupancyCounts",
 				"OccupancyCounts select(mapColumn(",
@@ -97,21 +153,82 @@
 				"          country_code_3_digit,",
 				"          population,",
 				"          reported_date,",
-				"          hospital_occupancy_count = {valueDaily hospital occupancy},",
-				"          icu_occupancy_count = {valueDaily ICU occupancy},",
+				"          hospital_occupancy_count = {Daily hospital occupancy},",
+				"          icu_occupancy_count = {Daily ICU occupancy},",
 				"          source",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> SelectSinkFields",
 				"SelectSinkFields sort(asc(country, true),",
 				"     asc(reported_date, true)) ~> SortByCountryAndDate",
+				"CountryCodesLoookup split(indicator == \"Weekly new hospital admissions per 100k\" || indicator == \"Weekly new ICU admissions per 100k\",",
+				"     disjoint: false) ~> SplitDailyAndWeekly@(Weekly, Daily)",
+				"DimDates derive(ecdc_year_week = year + \"-W\" + lpad(week_of_year, 2, \"0\")) ~> DeriveECDCYearWeek",
+				"DeriveECDCYearWeek aggregate(groupBy(ecdc_year_week),",
+				"     week_start_date = min(date),",
+				"          week_end_date = max(date)) ~> AggDimDate",
+				"SplitDailyAndWeekly@Weekly, AggDimDate join(reported_year_week == ecdc_year_week,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'right')~> JoinDimDates",
+				"JoinDimDates select(mapColumn(",
+				"          country = SplitDailyAndWeekly@Weekly@country,",
+				"          country_code_2_digit,",
+				"          country_code_3_digit,",
+				"          population,",
+				"          reported_year_week,",
+				"          reported_week_start_date = week_start_date,",
+				"          reported_week_end_date = week_end_date,",
+				"          source,",
+				"          indicator,",
+				"          reported_date,",
+				"          value",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectWeeklyRequiredFields",
+				"SelectWeeklySinkFields sort(asc(country, true),",
+				"     asc(reported_year_week, true)) ~> SortWeeklyByCountryAndWeek",
+				"SelectWeeklyRequiredFields pivot(groupBy(country,",
+				"          country_code_2_digit,",
+				"          country_code_3_digit,",
+				"          population,",
+				"          reported_year_week,",
+				"          reported_week_start_date,",
+				"          reported_week_end_date,",
+				"          source),",
+				"     pivotBy(indicator, ['Weekly new hospital admissions per 100k', 'Weekly new ICU admissions per 100k']),",
+				"     {} = sum(value),",
+				"     columnNaming: '$N$V',",
+				"     lateral: true) ~> WeeklyOccupancyCounts",
+				"WeeklyOccupancyCounts select(mapColumn(",
+				"          country,",
+				"          country_code_2_digit,",
+				"          country_code_3_digit,",
+				"          population,",
+				"          reported_year_week,",
+				"          reported_week_start_date,",
+				"          reported_week_end_date,",
+				"          new_hospital_occupancy_count = {Weekly new hospital admissions per 100k},",
+				"          new_icu_occupancy_count = {Weekly new ICU admissions per 100k},",
+				"          source",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectWeeklySinkFields",
 				"SortByCountryAndDate sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     umask: 0022,",
 				"     preCommands: [],",
 				"     postCommands: [],",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> Sink"
+				"     skipDuplicateMapOutputs: true) ~> Sink",
+				"SortWeeklyByCountryAndWeek sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SinkWeekly"
 			]
 		}
 	}
