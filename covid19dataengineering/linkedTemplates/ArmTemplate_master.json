@@ -15,6 +15,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
 		},
+		"covid19excersice_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'covid19excersice'"
+		},
 		"ls_db_covid_cluster_accessToken": {
 			"type": "secureString",
 			"metadata": "Secure string for 'accessToken' of 'ls_db_covid_cluster'"
@@ -63,6 +67,9 @@
 					},
 					"AzureDataLakeStorage1_accountKey": {
 						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					},
+					"covid19excersice_connectionString": {
+						"value": "[parameters('covid19excersice_connectionString')]"
 					},
 					"ls_db_covid_cluster_accessToken": {
 						"value": "[parameters('ls_db_covid_cluster_accessToken')]"

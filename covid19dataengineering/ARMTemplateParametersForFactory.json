@@ -11,6 +11,9 @@
 		"AzureDataLakeStorage1_accountKey": {
 			"value": ""
 		},
+		"covid19excersice_connectionString": {
+			"value": ""
+		},
 		"ls_db_covid_cluster_accessToken": {
 			"value": ""
 		},
