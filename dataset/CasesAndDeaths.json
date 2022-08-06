@@ -1,0 +1,12 @@
+{
+	"name": "CasesAndDeaths",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "covid19excersice",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	}
+}
