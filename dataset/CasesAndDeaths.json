@@ -5,6 +5,9 @@
 			"referenceName": "covid19excersice",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "sql"
+		},
 		"annotations": [],
 		"type": "AzureSqlTable",
 		"schema": [],
