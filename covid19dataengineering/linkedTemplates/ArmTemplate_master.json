@@ -31,7 +31,7 @@
 			"type": "string",
 			"defaultValue": "@{linkedService().sourceBaseURL}"
 		},
-		"tr_ingest_population_data_properties_typeProperties_scope": {
+		"tr_population_data_arrives_properties_typeProperties_scope": {
 			"type": "string",
 			"defaultValue": "/subscriptions/1411160c-73a1-4663-b944-70036b232956/resourceGroups/covid19-data-engineering/providers/Microsoft.Storage/storageAccounts/covid19swamp"
 		},
@@ -98,8 +98,8 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
-					"tr_ingest_population_data_properties_typeProperties_scope": {
-						"value": "[parameters('tr_ingest_population_data_properties_typeProperties_scope')]"
+					"tr_population_data_arrives_properties_typeProperties_scope": {
+						"value": "[parameters('tr_population_data_arrives_properties_typeProperties_scope')]"
 					}
 				}
 			},

@@ -23,7 +23,7 @@
 		"ls_http_opendata_ecdc_europa_eu_properties_typeProperties_url": {
 			"value": "@{linkedService().sourceBaseURL}"
 		},
-		"tr_ingest_population_data_properties_typeProperties_scope": {
+		"tr_population_data_arrives_properties_typeProperties_scope": {
 			"value": "/subscriptions/1411160c-73a1-4663-b944-70036b232956/resourceGroups/covid19-data-engineering/providers/Microsoft.Storage/storageAccounts/covid19swamp"
 		}
 	}
